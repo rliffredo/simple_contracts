@@ -1,11 +1,10 @@
-
 from unittest import TestCase
 
-from contracts import SimpleAssertion, ListAssertion, MemberAssertion, parse_assertion, ContractParseError, new_contract, ContractError, contract
+from contracts import SimpleAssertion, ListAssertion, MemberAssertion, parse_assertion, ContractParseError, \
+    new_contract, ContractError, contract
 
 
 class ParseTest(TestCase):
-
     @staticmethod
     def _always_true(x):
         return True
@@ -128,23 +127,38 @@ class ParseActionTest(TestCase):
 
 class CheckContractTest(TestCase):
     def setUp(self):
+        def f():
+            raise Exception("Unstable contract")
+
         new_contract("int", lambda x: isinstance(x, int))
+        new_contract("not empty", lambda x: len(x) > 0)
+        new_contract("unstable", lambda x: f())
 
     def test_single_parameter(self):
-
         @contract(a='int')
         def f(a):
             return a
 
-        self.assertRaises(TypeError, f)
         self.assertEqual(f(1), 1)
         self.assertRaises(ContractError, f, 'a')
 
-    def test_multi_parameters(self):
+    def test_exceptions_in_contract(self):
+        @contract(a='not empty')
+        def f(a):
+            return a
 
+        @contract(a='unstable')
+        def g(a):
+            return a
+
+        self.assertRaises(TypeError, f)
+        self.assertRaises(ContractError, f, None)
+        self.assertRaises(ContractError, g, None)
+
+    def test_multi_parameters(self):
         @contract(a='int', b='int')
         def f(a, b):
-            return a+b
+            return a + b
 
         self.assertEqual(f(1, 2), 3)
         self.assertRaises(ContractError, f, 'a', 'b')
@@ -152,7 +166,6 @@ class CheckContractTest(TestCase):
         self.assertRaises(ContractError, f, 'a', 1)
 
     def test_half_parameters(self):
-
         @contract(a='int')
         def f(a, b):
             return str(a) + str(b)
@@ -173,7 +186,7 @@ class CheckContractTest(TestCase):
     def test_constraint(self):
         @contract(_constraint='a<b')
         def f(a, b):
-            return a+b
+            return a + b
 
         self.assertEqual(f(1, 2), 3)
         self.assertRaises(ContractError, f, 2, 1)

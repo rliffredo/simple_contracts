@@ -66,11 +66,14 @@ def contract(**assertion_list):
         if returns is not None and not returns.check(ret):
             raise ContractError('Broken contract for return value of function %s' % f.__name__)
         return ret
+
     return decorator(_contract)
 
 
 def new_contract(name, assertion):
+    global _defined_contracts
     _defined_contracts[name] = assertion
+
 
 _defined_contracts = {}
 
@@ -89,8 +92,12 @@ class ContractAssertion(object):
         self.assertions = parsed_assertions
 
     def check(self, param):
-        check_assertions = all if self.all_required else any
-        return check_assertions(a.check(param) for a in self.assertions)
+        # noinspection PyBroadException
+        try:
+            check_assertions = all if self.all_required else any
+            return check_assertions(a.check(param) for a in self.assertions)
+        except:
+            return False
 
     def count(self):
         return len(self.assertions)
@@ -137,11 +144,13 @@ def _parse_single_assertion(assertion_text):
         inner_assertion = _parse_single_assertion(match.groups()[1])
         return MemberAssertion(match.groups()[0], inner_assertion)
     # Simple
+    if assertion_text not in _defined_contracts.keys():
+        raise ContractParseError("Use of undefined contract \"%s\"" % assertion_text)
     return SimpleAssertion(_defined_contracts[assertion_text])
 
 
 def parse_assertion(assertion):
-    assert(isinstance(assertion, str))
+    assert (isinstance(assertion, str))
     # Multiple assertions
     if ',' in assertion and '|' in assertion:
         raise ContractParseError("Cannot use operators ',' and '|' in the same contract assertion")
@@ -149,4 +158,3 @@ def parse_assertion(assertion):
     assertions = [assertion.strip() for assertion in assertion.split(separator_char)]
     parsed_assertions = [_parse_single_assertion(assertion_text) for assertion_text in assertions]
     return ContractAssertion(parsed_assertions, separator_char == ',')
-
