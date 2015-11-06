@@ -33,7 +33,7 @@ def pairwise(iterable):
 
 
 def setup():
-    new_contract('None', lambda x: x is None)
+    new_contract('not none', lambda x: x is not None)
     new_contract('bool', lambda x: isinstance(x, bool))
     new_contract('number', lambda x: isinstance(x, Number))
     new_contract('string', lambda x: isinstance(x, str))
