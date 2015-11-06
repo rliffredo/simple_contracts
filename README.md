@@ -39,3 +39,13 @@ Example assertions:
     contract 'negative int'
   - `p='positive int|negative int'`  
     p satisfies any of contracts 'positive int' and 'negative int'
+
+## Basic contracts
+There are already available some basic contracts:
+  - `not none`: fails if parameter is None
+  - `bool`, `number`, `string`: they all fail if parameter is not of the desired type
+  - `any date`: fails if the parameter is not a date (in IronPython, also System.Date)
+  - `any datetime`: fails if the parameter is not a datetime (in IronPython, also System.DateTime)
+  - `string with text`: fails if the parameter is not a string, or if it is an empty string
+  - `not empty`: fails if the parameter is not a container, or the container is empty
+  - `sorted`: fails if the parameter is not a container (or a string!) or its content is not sorted.
