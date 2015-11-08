@@ -3,6 +3,8 @@ from unittest import TestCase
 from contracts import SimpleAssertion, ListAssertion, MemberAssertion, parse_assertion, ContractParseError, \
     new_contract, ContractError, contract
 
+import contracts
+
 
 class ParseTest(TestCase):
     @staticmethod
@@ -190,3 +192,17 @@ class CheckContractTest(TestCase):
 
         self.assertEqual(f(1, 2), 3)
         self.assertRaises(ContractError, f, 2, 1)
+
+    def test_disabled(self):
+
+        @contract(a='int')
+        def f(a):
+            return a
+
+        contracts.enabled = False
+        self.assertEqual(f(1), 1)
+        self.assertEqual(f('a'), 'a')
+
+        contracts.enabled = True
+        self.assertEqual(f(1), 1)
+        self.assertRaises(ContractError, f, 'a')

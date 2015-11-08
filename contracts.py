@@ -4,6 +4,8 @@ Small module to allow some DBC in python.
 Contracts can specify assertions on parameters, on relations between parameters, and the return value.
 Assertions on parameters and return value are boolean functions that must be registered before the contract evaluation.
 Assertions on relations between parameters instead are just any python expression.
+Contracts can be turned off, for instance to improve performance on a final release. Note that there are no performance
+tests now about the impact of the contracts, in both cases (enabled and disabled).
 
 Usage:
 
@@ -53,6 +55,9 @@ def contract(**assertion_list):
             parameter_assertions[param_name] = parse_assertion(assertion_list[param_name])
 
     def _contract(f, *args, **kwargs):
+        global enabled
+        if not enabled:
+            return f(*args, **kwargs)
         # retrieve all parameters
         bound_parameters = inspect.getcallargs(f, *args, **kwargs)
         # bound: {'a': 1, 'b': 2}
@@ -74,6 +79,8 @@ def new_contract(name, assertion):
     global _defined_contracts
     _defined_contracts[name] = assertion
 
+
+enabled = True
 
 _defined_contracts = {}
 
