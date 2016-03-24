@@ -33,12 +33,16 @@ def pairwise(iterable):
 
 
 def setup():
-    new_contract('not none', lambda x: x is not None)
+    # Empty
+    new_contract('None', lambda x: x is None)
+    new_contract('not None', lambda x: x is not None)
+    new_contract('not empty', lambda x: len(x) > 0)
+    # Basic types
     new_contract('bool', lambda x: isinstance(x, bool))
     new_contract('number', lambda x: isinstance(x, Number))
     new_contract('string', lambda x: isinstance(x, str))
-    new_contract('string with text', lambda x: isinstance(x, str) and len(x) > 0)
-    new_contract('not empty', lambda x: len(x) > 0)
+    new_contract('string with text', lambda x: isinstance(x, str) and len(x.strip()) > 0)
+    # Date/time
     try:
         # IronPython-specific contracts
         # noinspection PyUnresolvedReferences
@@ -49,4 +53,5 @@ def setup():
     except ImportError:
         new_contract('any date', lambda dt: isinstance(dt, date))
         new_contract('any datetime', lambda dt: isinstance(dt, datetime))
+    # Others
     new_contract('sorted', lambda l: all((x <= y for x, y in pairwise(l))))

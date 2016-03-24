@@ -11,7 +11,7 @@ class BasicTests(TestCase):
         basic_contracts.setup()
 
     def test_not_none(self):
-        @contract(param='not none')
+        @contract(param='not None')
         def tnotnone(param):
             pass
         self.assertRaises(ContractError, tnotnone, None)
@@ -21,6 +21,13 @@ class BasicTests(TestCase):
         tnotnone('abc')
         tnotnone([])
         tnotnone([1, 2, 3])
+
+    def test_none(self):
+        @contract(param='None')
+        def tnone(param):
+            pass
+        self.assertRaises(ContractError, tnone, 1)
+        tnone(None)
 
     def test_bool(self):
         @contract(param='bool')
