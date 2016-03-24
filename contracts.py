@@ -35,8 +35,9 @@ Example assertions:
   - p='positive int|negative int'                   p satisfies any of contracts 'positive int' and 'negative int'
 """
 
-import inspect
 import re
+import inspect
+import collections
 
 from decorator import decorator
 
@@ -118,12 +119,15 @@ class SimpleAssertion(object):
         return self.assertion(param)
 
 
-class ListAssertion(object):
+class SequenceAssertion(object):
     def __init__(self, inner_assertion):
         self.internal_assertion = inner_assertion
 
     def check(self, param):
         try:
+            is_sequence = isinstance(param, collections.Sequence) and not isinstance(param, str)
+            if not is_sequence:
+                return False
             return all(self.internal_assertion.check(p) for p in param)
         except TypeError:
             return False
@@ -144,7 +148,7 @@ def _parse_single_assertion(assertion_text):
     match = re.match(r'\[(.*)\]', assertion_text)
     if match:
         inner_assertion = _parse_single_assertion(match.groups()[0])
-        return ListAssertion(inner_assertion)
+        return SequenceAssertion(inner_assertion)
     # Member
     match = re.match(r'(.*):(.*)', assertion_text)
     if match:

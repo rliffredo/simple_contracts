@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from contracts import SimpleAssertion, ListAssertion, MemberAssertion, parse_assertion, ContractParseError, \
+from contracts import SimpleAssertion, SequenceAssertion, MemberAssertion, parse_assertion, ContractParseError, \
     new_contract, ContractError, contract
 
 import contracts
@@ -29,7 +29,7 @@ class ParseTest(TestCase):
     def test_list(self):
         res = parse_assertion("[test assertion]")
         self.assertEqual(res.count(), 1)
-        self.check_nested_assertions(res.assertions[0], [ListAssertion, SimpleAssertion])
+        self.check_nested_assertions(res.assertions[0], [SequenceAssertion, SimpleAssertion])
 
     def test_member(self):
         res = parse_assertion("member:test assertion")
@@ -39,13 +39,13 @@ class ParseTest(TestCase):
     def test_member_in_list(self):
         res = parse_assertion("[member:test assertion]")
         self.assertEqual(res.count(), 1)
-        self.check_nested_assertions(res.assertions[0], [ListAssertion, MemberAssertion,
+        self.check_nested_assertions(res.assertions[0], [SequenceAssertion, MemberAssertion,
                                                          SimpleAssertion])
 
     def test_list_in_member(self):
         res = parse_assertion("member:[test assertion]")
         self.assertEqual(res.count(), 1)
-        self.check_nested_assertions(res.assertions[0], [MemberAssertion, ListAssertion,
+        self.check_nested_assertions(res.assertions[0], [MemberAssertion, SequenceAssertion,
                                                          SimpleAssertion])
 
     def test_multiple_and_simple(self):
@@ -59,9 +59,9 @@ class ParseTest(TestCase):
         res = parse_assertion("[member:test assertion], member:[test assertion]")
         self.assertEqual(res.count(), 2)
         self.assertTrue(res.all_required)
-        self.check_nested_assertions(res.assertions[0], [ListAssertion, MemberAssertion,
+        self.check_nested_assertions(res.assertions[0], [SequenceAssertion, MemberAssertion,
                                                          SimpleAssertion])
-        self.check_nested_assertions(res.assertions[1], [MemberAssertion, ListAssertion,
+        self.check_nested_assertions(res.assertions[1], [MemberAssertion, SequenceAssertion,
                                                          SimpleAssertion])
 
     def test_multiple_or_simple(self):
@@ -75,9 +75,9 @@ class ParseTest(TestCase):
         res = parse_assertion("[member:test assertion]|member:[test assertion]")
         self.assertEqual(res.count(), 2)
         self.assertFalse(res.all_required)
-        self.check_nested_assertions(res.assertions[0], [ListAssertion, MemberAssertion,
+        self.check_nested_assertions(res.assertions[0], [SequenceAssertion, MemberAssertion,
                                                          SimpleAssertion])
-        self.check_nested_assertions(res.assertions[1], [MemberAssertion, ListAssertion,
+        self.check_nested_assertions(res.assertions[1], [MemberAssertion, SequenceAssertion,
                                                          SimpleAssertion])
 
     def test_cannot_do_and_or(self):
@@ -121,6 +121,8 @@ class ParseActionTest(TestCase):
         self.assertFalse(parse_assertion("always false|always false").check(None))
 
     def test_list(self):
+        self.assertTrue(parse_assertion("[always true]").check([]))
+        self.assertTrue(parse_assertion("[always false]").check([]))
         self.assertFalse(parse_assertion("[always true]").check(None))
         self.assertFalse(parse_assertion("[always true]").check(1))
         self.assertTrue(parse_assertion("[always true]|always true").check(None))
@@ -206,3 +208,21 @@ class CheckContractTest(TestCase):
         contracts.enabled = True
         self.assertEqual(f(1), 1)
         self.assertRaises(ContractError, f, 'a')
+
+    def test_stringlist(self):
+        """
+        Special case: a string is a sequence; and therefore might still pass
+        the "sequence" test.
+        """
+        new_contract('string', lambda x: isinstance(x, str))
+        @contract(a='[string]')
+        def f(a):
+            return a
+
+        self.assertRaises(ContractError, f, 'a')
+        self.assertRaises(ContractError, f, 1)
+        self.assertRaises(ContractError, f, {1: 1})
+        self.assertRaises(ContractError, f, [1])
+        self.assertEqual(f(['a']), ['a'])
+        self.assertEqual(f(['a', '']), ['a', ''])
+        self.assertEqual(f([]), [])
