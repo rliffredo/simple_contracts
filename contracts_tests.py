@@ -129,6 +129,10 @@ class ParseActionTest(TestCase):
         self.assertTrue(parse_assertion("[always true]|always true").check(None))
         self.assertFalse(parse_assertion("[always true],always true").check(None))
 
+    def test_tuple(self):
+        self.assertTrue(parse_assertion("[always true]").check(tuple()))
+        self.assertTrue(parse_assertion("[always false]").check(tuple()))
+
 
 class IronPythonSpecificTest(TestCase):
     def setUp(self):
