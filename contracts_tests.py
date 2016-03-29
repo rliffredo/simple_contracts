@@ -1,3 +1,4 @@
+import sys
 from unittest import TestCase
 
 from contracts import SimpleAssertion, SequenceAssertion, MemberAssertion, parse_assertion, ContractParseError, \
@@ -127,6 +128,18 @@ class ParseActionTest(TestCase):
         self.assertFalse(parse_assertion("[always true]").check(1))
         self.assertTrue(parse_assertion("[always true]|always true").check(None))
         self.assertFalse(parse_assertion("[always true],always true").check(None))
+
+
+class IronPythonSpecificTest(TestCase):
+    def setUp(self):
+        new_contract("always true", lambda x: True)
+        self.ironpython = getattr(sys, 'subversion', [None])[0] == 'IronPython'
+
+    def test_enumerable_as_list(self):
+        if not self.ironpython:
+            return
+        from System.Collections.Generic import List
+        self.assertTrue(parse_assertion("[always true]").check(List[int]()))
 
 
 class CheckContractTest(TestCase):

@@ -125,12 +125,18 @@ class SequenceAssertion(object):
 
     def check(self, param):
         try:
-            is_sequence = isinstance(param, collections.Sequence) and not isinstance(param, str)
+            is_sequence = isinstance(param, self.sequence_type) and not isinstance(param, str)
             if not is_sequence:
                 return False
             return all(self.internal_assertion.check(p) for p in param)
         except TypeError:
             return False
+
+try:
+    from System.Collections import IEnumerable
+    SequenceAssertion.sequence_type = IEnumerable
+except ImportError:
+    SequenceAssertion.sequence_type = collections.Sequence
 
 
 class MemberAssertion(object):
