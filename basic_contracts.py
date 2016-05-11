@@ -43,6 +43,8 @@ def setup():
     new_contract('string', lambda x: isinstance(x, str))
     new_contract('string with text', lambda x: isinstance(x, str) and len(x.strip()) > 0)
     # Date/time
+    new_contract('date', lambda dt: isinstance(dt, date))
+    new_contract('datetime', lambda dt: isinstance(dt, datetime))
     try:
         # IronPython-specific contracts
         # noinspection PyUnresolvedReferences
