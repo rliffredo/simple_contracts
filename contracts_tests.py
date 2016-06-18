@@ -8,6 +8,7 @@ import contracts
 
 
 class ParseTest(TestCase):
+    # noinspection PyUnusedLocal
     @staticmethod
     def _always_true(x):
         return True
@@ -134,6 +135,7 @@ class ParseActionTest(TestCase):
         self.assertTrue(parse_assertion("[always false]").check(tuple()))
 
 
+# noinspection PyUnresolvedReferences
 class IronPythonSpecificTest(TestCase):
     def setUp(self):
         new_contract("always true", lambda x: True)
@@ -226,12 +228,13 @@ class CheckContractTest(TestCase):
         self.assertEqual(f(1), 1)
         self.assertRaises(ContractError, f, 'a')
 
-    def test_stringlist(self):
+    def test_string_list(self):
         """
         Special case: a string is a sequence; and therefore might still pass
         the "sequence" test.
         """
         new_contract('string', lambda x: isinstance(x, str))
+
         @contract(a='[string]')
         def f(a):
             return a

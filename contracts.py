@@ -125,6 +125,7 @@ class SequenceAssertion(object):
 
     def check(self, param):
         try:
+            # noinspection PyUnresolvedReferences
             is_sequence = isinstance(param, self.sequence_type) and not isinstance(param, str)
             if not is_sequence:
                 return False
@@ -133,6 +134,7 @@ class SequenceAssertion(object):
             return False
 
 try:
+    # noinspection PyUnresolvedReferences
     from System.Collections import IEnumerable
     SequenceAssertion.sequence_type = IEnumerable
 except ImportError:

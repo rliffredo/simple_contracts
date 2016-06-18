@@ -19,6 +19,7 @@ from itertools import tee
 try:
     from itertools import izip
 except ImportError:
+    # noinspection SpellCheckingInspection
     izip = zip  # In python 3 and above, zip will return an iterator
 
 
