@@ -64,7 +64,13 @@ def contract(**assertion_list):
         # bound: {'a': 1, 'b': 2}
         for param in bound_parameters.keys():
             if param in parameter_assertions.keys() and not parameter_assertions[param].check(bound_parameters[param]):
-                raise ContractError("Broken contract for parameter %s in function %s" % (param, f.__name__))
+                # noinspection PyBroadException
+                try:
+                    param_desc = str(bound_parameters[param])
+                except:
+                    param_desc = type(bound_parameters[param])
+                raise ContractError("Broken contract for parameter %s in function %s (got: %s)" % (param, f.__name__,
+                                                                                                   param_desc))
         # Check general constraints
         if constraint is not None and not eval(constraint, bound_parameters):
             raise ContractError("Broken contract for general constraint '%s' in function %s" % (constraint, f.__name__))
