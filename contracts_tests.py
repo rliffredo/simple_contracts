@@ -1,7 +1,7 @@
 import sys
 from unittest import TestCase
 
-from contracts import SimpleAssertion, SequenceAssertion, MappingAssertion, MemberAssertion
+from contracts import GenericAssertion, SimpleAssertion, SequenceAssertion, MappingAssertion, MemberAssertion
 from contracts import parse_assertion, ContractParseError, new_contract, ContractError, contract
 import contracts
 
@@ -28,61 +28,66 @@ class ParseTest(TestCase):
         else:
             self.assertEqual(assertion.assertion, ParseTest._always_true)
 
+    def test_generic(self):
+        res = parse_assertion(lambda x: True)
+        self.assertEqual(res.count, 1)
+        self.assertIsInstance(res, GenericAssertion)
+
     def test_simple(self):
         res = parse_assertion("test assertion")
-        self.assertEqual(res.count(), 1)
+        self.assertEqual(res.count, 1)
         self.check_nested_assertions(res.assertions[0], [SimpleAssertion])
 
     def test_list(self):
         res = parse_assertion("[test assertion]")
-        self.assertEqual(res.count(), 1)
+        self.assertEqual(res.count, 1)
         self.check_nested_assertions(res.assertions[0], [SequenceAssertion, SimpleAssertion])
 
     def test_member(self):
         res = parse_assertion("member:test assertion")
-        self.assertEqual(res.count(), 1)
+        self.assertEqual(res.count, 1)
         self.check_nested_assertions(res.assertions[0], [MemberAssertion, SimpleAssertion])
 
     def test_member_in_list(self):
         res = parse_assertion("[member:test assertion]")
-        self.assertEqual(res.count(), 1)
+        self.assertEqual(res.count, 1)
         self.check_nested_assertions(res.assertions[0], [SequenceAssertion, MemberAssertion,
                                                          SimpleAssertion])
 
     def test_list_in_member(self):
         res = parse_assertion("member:[test assertion]")
-        self.assertEqual(res.count(), 1)
+        self.assertEqual(res.count, 1)
         self.check_nested_assertions(res.assertions[0], [MemberAssertion, SequenceAssertion, SimpleAssertion])
 
     def test_dict_values(self):
         res = parse_assertion("{test assertion}")
-        self.assertEqual(res.count(), 1)
+        self.assertEqual(res.count, 1)
         self.check_nested_assertions(res.assertions[0], [MappingAssertion, SimpleAssertion])
 
     def test_multiple_and_simple(self):
         res = parse_assertion("test assertion, test assertion")
-        self.assertEqual(res.count(), 2)
+        self.assertEqual(res.count, 2)
         self.assertTrue(res.all_required)
         self.check_nested_assertions(res.assertions[0], [SimpleAssertion])
         self.check_nested_assertions(res.assertions[1], [SimpleAssertion])
 
     def test_multiple_and_complex(self):
         res = parse_assertion("[member:test assertion], member:[test assertion]")
-        self.assertEqual(res.count(), 2)
+        self.assertEqual(res.count, 2)
         self.assertTrue(res.all_required)
         self.check_nested_assertions(res.assertions[0], [SequenceAssertion, MemberAssertion, SimpleAssertion])
         self.check_nested_assertions(res.assertions[1], [MemberAssertion, SequenceAssertion, SimpleAssertion])
 
     def test_multiple_or_simple(self):
         res = parse_assertion("test assertion|test assertion")
-        self.assertEqual(res.count(), 2)
+        self.assertEqual(res.count, 2)
         self.assertFalse(res.all_required)
         self.check_nested_assertions(res.assertions[0], [SimpleAssertion])
         self.check_nested_assertions(res.assertions[1], [SimpleAssertion])
 
     def test_multiple_or_complex(self):
         res = parse_assertion("[member:test assertion]|member:[test assertion]")
-        self.assertEqual(res.count(), 2)
+        self.assertEqual(res.count, 2)
         self.assertFalse(res.all_required)
         self.check_nested_assertions(res.assertions[0], [SequenceAssertion, MemberAssertion, SimpleAssertion])
         self.check_nested_assertions(res.assertions[1], [MemberAssertion, SequenceAssertion, SimpleAssertion])
@@ -96,6 +101,15 @@ class ParseActionTest(TestCase):
         new_contract("always true", lambda x: True)
         new_contract("always false", lambda x: False)
         new_contract("pass-through", lambda x: x)
+
+    def test_generic(self):
+        res = parse_assertion(lambda x: True)
+        self.assertTrue(res.check(1))
+        res = parse_assertion(lambda x: False)
+        self.assertFalse(res.check(1))
+        res = parse_assertion(lambda x: x == 1)
+        self.assertTrue(res.check(1))
+        self.assertFalse(res.check(2))
 
     def test_no_parameter(self):
         res = parse_assertion("always true")

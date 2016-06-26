@@ -104,6 +104,19 @@ class ContractParseError(Exception):
     pass
 
 
+class GenericAssertion(object):
+    def __init__(self, assertion_callable):
+        self.assertion = assertion_callable
+        self.count = 1
+
+    def check(self, param):
+        # noinspection PyBroadException
+        try:
+            return self.assertion(param)
+        except:
+            return False
+
+
 class ContractAssertion(object):
     def __init__(self, parsed_assertions, all_required):
         self.all_required = all_required
@@ -117,6 +130,7 @@ class ContractAssertion(object):
         except:
             return False
 
+    @property
     def count(self):
         return len(self.assertions)
 
@@ -203,6 +217,9 @@ def _parse_single_assertion(assertion_text):
 
 
 def parse_assertion(assertion):
+    if callable(assertion):
+        return GenericAssertion(assertion)
+
     assert (isinstance(assertion, str))
     # Multiple assertions
     if ',' in assertion and '|' in assertion:

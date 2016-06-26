@@ -27,6 +27,8 @@ Assertion syntax:
   4. It is possible to nest the two points before in any way
   5. Several assertions can be chained with ',', meaning they need all to be satisfied
   6. As well, '|' can be used to state alternative paths. This can't be used together with ','
+  7. It is possible to pass a callable, with signature x  -> Bool, which will be simply called with the parameter and
+     will return the assertion result.
 
 Example assertions:
   - `p='positive int'`  
