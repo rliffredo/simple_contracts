@@ -19,14 +19,18 @@ Usage:
 Assertion syntax:
   1. A basic assertion is just a reference to a contract defined with new_contract
   2. Assertions may be surrounded by [] to state the assertion is on all items of the enumerable
-  3. They can also be preceded by 'name:' to state that the assertion is on a member
-  4. It is possible to nest the two points before in any way
-  5. Several assertions can be chained with ',', meaning they need all to be satisfied
-  6. As well, '|' can be used to state alternative paths. This can't be used together with ','.
+  3. Assertions may be surrounded by {} to state the assertion is on all the values of a mapping
+  4. They can also be preceded by 'name:' to state that the assertion is on a member
+  5. It is possible to nest the two points before in any way
+  6. Several assertions can be chained with ',', meaning they need all to be satisfied
+  7. As well, '|' can be used to state alternative paths. This can't be used together with ','.
 
 Example assertions:
   - p='positive int'                                p satisfies contract 'positive int'
-  - p='[positive int]'                              p is a sequence of items all satisfying the contract 'positive int'
+  - p='[positive int]'                              p is a sequence of items all satisfying the contract 'positive int',
+                                                    or is a mapping with all keys satisfying the same contract
+  - p='{positive int}'                              p is a mapping with all values satisfying the contract
+                                                    'positive int'
   - p='member:positive int'                         p is an object with a member satisfying the contract 'positive int'
   - p='[member:positive int]'                       p is a sequence of objects, all with a member satisfying the
                                                     contract 'positive int'
@@ -121,8 +125,12 @@ class SimpleAssertion(object):
     def __init__(self, assertion):
         self.assertion = assertion
 
+    # noinspection PyBroadException
     def check(self, param):
-        return self.assertion(param)
+        try:
+            return self.assertion(param)
+        except:
+            return False
 
 
 class SequenceAssertion(object):
@@ -131,6 +139,8 @@ class SequenceAssertion(object):
 
     def check(self, param):
         try:
+            if isinstance(param, collections.Mapping):
+                param = list(param.keys())
             # noinspection PyUnresolvedReferences
             is_sequence = isinstance(param, self.sequence_type) and not isinstance(param, str)
             if not is_sequence:
@@ -147,6 +157,19 @@ except ImportError:
     SequenceAssertion.sequence_type = collections.Sequence
 
 
+class MappingAssertion(object):
+    def __init__(self, inner_assertion):
+        self.internal_assertion = inner_assertion
+
+    def check(self, param):
+        try:
+            if not isinstance(param, collections.Mapping):
+                return False
+            return all(self.internal_assertion.check(p) for p in param.values())
+        except TypeError:
+            return False
+
+
 class MemberAssertion(object):
     def __init__(self, member_name, inner_assertion):
         self.member_name = member_name
@@ -158,11 +181,16 @@ class MemberAssertion(object):
 
 
 def _parse_single_assertion(assertion_text):
-    # List
+    # Sequence
     match = re.match(r'\[(.*)\]', assertion_text)
     if match:
         inner_assertion = _parse_single_assertion(match.groups()[0])
         return SequenceAssertion(inner_assertion)
+    # Mapping
+    match = re.match(r'\{(.*)\}', assertion_text)
+    if match:
+        inner_assertion = _parse_single_assertion(match.groups()[0])
+        return MappingAssertion(inner_assertion)
     # Member
     match = re.match(r'(.*):(.*)', assertion_text)
     if match:

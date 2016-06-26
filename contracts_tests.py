@@ -1,10 +1,15 @@
 import sys
 from unittest import TestCase
 
-from contracts import SimpleAssertion, SequenceAssertion, MemberAssertion, parse_assertion, ContractParseError, \
-    new_contract, ContractError, contract
-
+from contracts import SimpleAssertion, SequenceAssertion, MappingAssertion, MemberAssertion
+from contracts import parse_assertion, ContractParseError, new_contract, ContractError, contract
 import contracts
+
+
+class CallableAssertionTest(TestCase):
+    def check_lambda_assertion(self):
+        res = parse_assertion(lambda x: True)
+        self.assertTrue(res)
 
 
 class ParseTest(TestCase):
@@ -47,8 +52,12 @@ class ParseTest(TestCase):
     def test_list_in_member(self):
         res = parse_assertion("member:[test assertion]")
         self.assertEqual(res.count(), 1)
-        self.check_nested_assertions(res.assertions[0], [MemberAssertion, SequenceAssertion,
-                                                         SimpleAssertion])
+        self.check_nested_assertions(res.assertions[0], [MemberAssertion, SequenceAssertion, SimpleAssertion])
+
+    def test_dict_values(self):
+        res = parse_assertion("{test assertion}")
+        self.assertEqual(res.count(), 1)
+        self.check_nested_assertions(res.assertions[0], [MappingAssertion, SimpleAssertion])
 
     def test_multiple_and_simple(self):
         res = parse_assertion("test assertion, test assertion")
@@ -61,10 +70,8 @@ class ParseTest(TestCase):
         res = parse_assertion("[member:test assertion], member:[test assertion]")
         self.assertEqual(res.count(), 2)
         self.assertTrue(res.all_required)
-        self.check_nested_assertions(res.assertions[0], [SequenceAssertion, MemberAssertion,
-                                                         SimpleAssertion])
-        self.check_nested_assertions(res.assertions[1], [MemberAssertion, SequenceAssertion,
-                                                         SimpleAssertion])
+        self.check_nested_assertions(res.assertions[0], [SequenceAssertion, MemberAssertion, SimpleAssertion])
+        self.check_nested_assertions(res.assertions[1], [MemberAssertion, SequenceAssertion, SimpleAssertion])
 
     def test_multiple_or_simple(self):
         res = parse_assertion("test assertion|test assertion")
@@ -77,10 +84,8 @@ class ParseTest(TestCase):
         res = parse_assertion("[member:test assertion]|member:[test assertion]")
         self.assertEqual(res.count(), 2)
         self.assertFalse(res.all_required)
-        self.check_nested_assertions(res.assertions[0], [SequenceAssertion, MemberAssertion,
-                                                         SimpleAssertion])
-        self.check_nested_assertions(res.assertions[1], [MemberAssertion, SequenceAssertion,
-                                                         SimpleAssertion])
+        self.check_nested_assertions(res.assertions[0], [SequenceAssertion, MemberAssertion, SimpleAssertion])
+        self.check_nested_assertions(res.assertions[1], [MemberAssertion, SequenceAssertion, SimpleAssertion])
 
     def test_cannot_do_and_or(self):
         self.assertRaises(ContractParseError, parse_assertion, "test assertion,test assertion|test assertion")
@@ -133,6 +138,22 @@ class ParseActionTest(TestCase):
     def test_tuple(self):
         self.assertTrue(parse_assertion("[always true]").check(tuple()))
         self.assertTrue(parse_assertion("[always false]").check(tuple()))
+
+    def test_dict_keys(self):
+        self.assertTrue(parse_assertion("[always true]").check({}))
+        self.assertTrue(parse_assertion("[always false]").check({}))
+        self.assertTrue(parse_assertion("[pass-through]").check({True: False}))
+        self.assertFalse(parse_assertion("[pass-through]").check({False: True}))
+        self.assertFalse(parse_assertion("[always true]").check(None))
+        self.assertFalse(parse_assertion("[always true]").check(1))
+
+    def test_dict_values(self):
+        self.assertTrue(parse_assertion("{always true}").check({}))
+        self.assertTrue(parse_assertion("{always false}").check({}))
+        self.assertFalse(parse_assertion("{pass-through}").check({True: False}))
+        self.assertTrue(parse_assertion("{pass-through}").check({False: True}))
+        self.assertFalse(parse_assertion("{always true}").check(None))
+        self.assertFalse(parse_assertion("{always true}").check(1))
 
 
 # noinspection PyUnresolvedReferences
