@@ -1,6 +1,7 @@
 # Simple Contracts
 
-Small module to allow some DBC in python.
+Small module to allow some DBC in python _and_ IronPython.  
+Tested on Python 3.4, as well as IronPython 2.7.6.
 
 Contracts can specify assertions on parameters, on relations between parameters, and the return value.
 Assertions on parameters and return value are boolean functions that must be registered before the contract evaluation.
